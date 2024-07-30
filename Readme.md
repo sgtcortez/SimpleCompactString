@@ -5,6 +5,7 @@
 - [Style](#Style)
 - [Examples](#Examples)
 - [Architecture](#architecture)
+- [Memory Usage explanation](#Memory-Usage-explanation)
 
 # Introduction
 
@@ -49,7 +50,7 @@ even with cache lines, this will cause some cycles of the processor.
 
 SCS does something different, the first byte its reserved for the options.   
 From these byte, we use 3 bits to represent the number of bytes that are needed to store the length of the user string.   
-One bit, its used to inform if the `scs` string its updatable.   
+One bit, its used to inform if the `scs` string its updatable(I would like to implement memory protection for this).   
 And, two bits are reserved to inform the encoding format of the string(ASCII, UTF-8, UTF-16 and UTF-32).
 
 Lets get some examples to show: 
@@ -88,3 +89,29 @@ Hence, we will need 2 allocations, and since both are on the heap, probably, whe
 
 Since **SCS** its not terminated with a `null byte`, we are binary safe.
 To create text string, you can use: `scs_from_string`, and to create strings from non text arrays, you can use: `scs_from`
+
+
+# Memory Usage explanation
+
+For the the first version, we are going to use only one byte to store the "options".    
+The message size its a variable length value.   
+
+- ## Strings with $size \lt 256$
+
+  For this type of string, only two additional bytes are going to be used.   
+  The first byte, will be the options, the second byte will be the string length.
+
+- ## Strings with $256 \ge size \lt 65536$
+
+    For this type of string, only three additional bytes are going to be used.   
+    The first byte, will be the options, the second and the third byte represent the string length.
+
+- ## Strings with $65536 \ge size \lt 16777216$
+
+    For this type of string, only four additional bytes are going to be used.   
+    The first byte, will be the options, the second, third  and the fourth byte represent the string length.
+
+- ## Strings with $16777216 \ge size \lt 4294967296$
+
+    For this type of string, only five additional bytes are going to be used.   
+    The first byte, will be the options, the second, third, fourth and the fifth byte represent the string length.
