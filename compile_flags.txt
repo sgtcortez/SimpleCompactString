@@ -1,0 +1,7 @@
+-I
+include
+-Wextra
+-Wpedantic
+-Werror
+-Wall
+-Werror=vla
