@@ -1,0 +1,6 @@
+*.out
+*.o
+idea/*
+.idea/*
+.build
+build

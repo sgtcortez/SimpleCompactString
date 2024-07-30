@@ -1,0 +1,35 @@
+---
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakAfterDefinitionReturnType: None
+AlwaysBreakAfterReturnType: None
+AlwaysBreakBeforeMultilineStrings: true
+BraceWrapping:
+  AfterControlStatement: Always
+  AfterEnum:       true
+  AfterFunction:   true
+  AfterStruct:     true
+  AfterUnion:      true
+  AfterExternBlock: true
+  BeforeElse:      true
+  IndentBraces:    false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  AfterCaseLabel: true
+BreakBeforeBraces: Custom
+ColumnLimit:     100
+IndentWidth: 4
+Language: Cpp
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeParens: Always
+SpacesInParentheses: true
+SpacesInSquareBrackets: false
+TabWidth: 8
+UseTab: Never
+...
