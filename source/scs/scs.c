@@ -58,16 +58,16 @@ typedef struct scs_internal
  * Restore the public scs struct to the internal scs struct.
  * This works because we have a well defined Memory Layout for our structures
  */
-scs_internal restore ( scs_t );
+scs_internal restore ( const scs_t );
 
-scs_t scs_from_string ( char *input )
+scs_t scs_from_string ( const char *input )
 {
-    input = input == NULL ? "" : input;
-    const size_t input_size = strlen ( input );
-    return scs_from ( input, input_size );
+    const char *handled_input = input == NULL ? "" : input;
+    const size_t input_size = strlen ( handled_input );
+    return scs_from ( handled_input, input_size );
 }
 
-scs_t scs_from ( char *input, uint64_t size )
+scs_t scs_from ( const char *input, uint64_t size )
 {
     internal_options opt;
     opt.size_type = count_bytes ( size );
@@ -101,7 +101,7 @@ void scs_free ( scs_t scs )
     free ( scs );
 }
 
-char *scs_to_string (scs_t scs)
+char *scs_to_string ( const scs_t scs )
 {
     const scs_internal internal = restore ( scs );
     const uint64_t size = scs_size ( scs );
@@ -110,14 +110,14 @@ char *scs_to_string (scs_t scs)
     return string;
 }
 
-uint64_t scs_size ( scs_t scs )
+uint64_t scs_size ( const scs_t scs )
 {
     const scs_internal internal = restore ( scs );
     const char *buffer = (char *)scs;
     return array_restore ( buffer + 1, internal.options.size_type );
 }
 
-scs_internal restore ( scs_t scs )
+scs_internal restore ( const scs_t scs )
 {
     char *buffer = (char *)scs;
     scs_internal internal = { 0 };
