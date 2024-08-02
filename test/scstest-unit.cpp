@@ -26,15 +26,30 @@ TEST ( create_from_array, mustBeSuccess )
     ASSERT_EQ ( scs_size ( ar ), size );
 }
 
-TEST ( restore_as_c_string, mustBeSuccess )
+TEST ( compare_cstrings, mustBeSuccess )
 {
     char *input = "Hello, my name its Matheus!";
     const uint64_t input_size = strlen ( input );
 
     const scs_t string = scs_from_string ( input );
-    const char *restore = scs_to_string ( string );
 
-    ASSERT_TRUE ( strncmp ( input, restore, input_size ) == 0 );
+    ASSERT_TRUE ( strncmp ( input, string, input_size ) == 0 );
 
     scs_free ( string );
+}
+
+TEST ( compare_length, mustBeSuccess )
+{
+    // For binary strings, we can not depend of the null byte, thats why we need the `scs_size` function
+    scs_t string = scs_from_string ( "Hello" );
+    ASSERT_EQ ( 5, scs_size ( string ) );
+
+    scs_free ( string );
+
+    char other[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+    scs_t string2 = scs_from ( other, 10 );
+    ASSERT_EQ ( 10, scs_size ( string2 ) );
+
+    scs_free ( string2 );
 }

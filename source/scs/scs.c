@@ -1,5 +1,6 @@
 #include "scs/scs.h"
 
+#include <bits/stdint-uintn.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,8 +43,14 @@ typedef union internal_options
          */
         uint8_t encoding : 2;
 
-        // Two bits left unused for now
-        uint8_t unused : 2;
+        /**
+         * A flag to determine if the string is binary or not
+         * If binary = 0, this means that the last byte must be the null byte, hence, we need to
+         * ignore it in the scs_size function
+         */
+        uint8_t binary : 1;
+
+        uint8_t unused : 1;
     };
     uint8_t byte;
 } internal_options;
@@ -67,6 +74,8 @@ typedef struct scs_internal
     internal_options options;
 } scs_internal;
 
+scs_t scs_from_internal ( const char *input, const uint64_t size, const bool binary );
+
 /**
  * Restore the public scs struct to the internal scs struct.
  * This works because we have a well defined Memory Layout for our structures
@@ -78,61 +87,73 @@ scs_t scs_from_string ( const char *input )
     const char *handled_input = input == NULL ? "" : input;
     // +1 byte to store the null byte
     const size_t input_size = strlen ( handled_input ) + 1;
-    return scs_from ( handled_input, input_size );
+    return scs_from_internal ( handled_input, input_size, false );
 }
 
 scs_t scs_from ( const char *input, uint64_t size )
+{
+    return scs_from_internal ( input, size, true );
+}
+
+scs_t scs_from_internal ( const char *input, const uint64_t size, const bool binary )
 {
     internal_options opt;
     opt.size_type = count_bytes ( size );
     opt.updatable = 1;
     opt.encoding = ASCII;
+    opt.binary = binary;
 
     const uint64_t bytes_needed = sizeof ( opt ) + count_bytes ( size ) + size;
 
     char *buffer = calloc ( bytes_needed, sizeof ( char ) );
 
     /**
-     * Store the Options in the first byte
-     */
-    memcpy ( buffer, &opt, sizeof ( opt ) );
-
-    /**
      * Store the user input message size in a variable length size
      */
-    array_store ( buffer + sizeof ( opt ), size, opt.size_type );
+    array_store ( buffer, size, opt.size_type );
+
+    /**
+     * Store the Options
+     */
+    memcpy ( buffer + opt.size_type, &opt, sizeof ( opt ) );
 
     /**
      * Store the user message
      */
     memcpy ( buffer + sizeof ( opt ) + opt.size_type, input, size );
 
-    return buffer;
+    /**
+     * Returns the C style string for the user
+     */
+    return buffer + sizeof ( opt ) + opt.size_type;
 }
 
 void scs_free ( scs_t scs )
 {
-    free ( scs );
-}
-
-const char *scs_to_string ( const scs_t scs )
-{
-    const scs_internal internal = restore ( scs );
-    return internal.r_buffer;
+    scs_internal internal = restore ( scs );
+    free ( internal.rw_buffer );
 }
 
 uint64_t scs_size ( const scs_t scs )
 {
     const scs_internal internal = restore ( scs );
-    const char *buffer = (char *)scs;
-    return array_restore ( buffer + 1, internal.options.size_type );
+    const uint64_t bytes = sizeof ( internal_options ) + internal.options.size_type;
+    char *start_index = scs - bytes;
+
+    const uint64_t size = array_restore ( start_index, internal.options.size_type );
+    if ( internal.options.binary )
+    {
+        return size;
+    }
+    // we must not count the null byte as part of the string length
+    return size - 1;
 }
 
 scs_internal restore ( const scs_t scs )
 {
-    char *buffer = (char *)scs;
     scs_internal internal = { 0 };
-    internal.options.byte = buffer[0];
-    internal.r_buffer = buffer + sizeof ( internal_options ) + internal.options.size_type;
+    internal.options.byte = scs[-1];
+    const uint64_t bytes = sizeof ( internal_options ) + internal.options.size_type;
+    internal.rw_buffer = scs - bytes;
     return internal;
 }

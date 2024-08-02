@@ -57,28 +57,26 @@ int main ( int argc, char **argv )
         "gravida ac cursus in, rhoncus ac nisi. Donec iaculis ante non nunc luctus egestas.is, "
         "gravida ac cursus in, rhoncus ac nisi. Donec iaculis ante non nunc"
         "Quisque vel massa interdum, pretium urna eu, dignissim turpis. Proin ante mauris, gravida "
-                "Quisque vel massa interdum, pretium urna eu, dignissim turpis. Proin ante mauris, gravida "
+        "Quisque vel massa interdum, pretium urna eu, dignissim turpis. Proin ante mauris, gravida "
         "Quisque vel massa interdum, pretium urna eu, dignissim turpis. Proin ante mauris, gravida "
         "Quisque vel massa interdum, pretium urna eu"
         "ac cursus in, rhoncus ac nisi. Donec iaculis ante non nunc luctus egestas."
         "luctus egestas.";
-    
-    const size_t text_size = strlen(str);
-    
-    char huge[MEGABYTE] = {0};
 
-    for (int index = 0; index < 250; index++)
+    const size_t text_size = strlen ( str );
+
+    char huge[MEGABYTE] = { 0 };
+
+    for ( int index = 0; index < 250; index++ )
     {
         const unsigned int start = index * text_size;
 
-        memcpy(huge, str, text_size);
-        memcpy(huge + start , str, text_size);
+        memcpy ( huge, str, text_size );
+        memcpy ( huge + start, str, text_size );
     }
 
-    scs_t *scs = scs_from_string ( huge );
-    const char *restored = scs_to_string ( scs );
-
-    const int equals = strcmp ( huge, restored );
+    const scs_t *scs = scs_from_string ( huge );
+    const int equals = strcmp ( huge, scs );
 
     fprintf ( stdout, "Are they equals?(%s). String length: %lu\n",
               ( equals == 0 ? "yep" : "nope" ), strlen ( huge ) );

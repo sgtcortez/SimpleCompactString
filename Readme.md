@@ -48,33 +48,31 @@ So we are wasting 2 or even 3 bytes.
 Other implementations might use Base128 for example, however it can be some wasteful for some scenarios and also, you need to process the length all the time,
 even with cache lines, this will cause some cycles of the processor.  
 
-SCS does something different, the first byte its reserved for the options.   
-From these byte, we use 3 bits to represent the number of bytes that are needed to store the length of the user string.   
-One bit, its used to inform if the `scs` string its updatable(I would like to implement memory protection for this).   
-And, two bits are reserved to inform the encoding format of the string(ASCII, UTF-8, UTF-16 and UTF-32).
+**SCS** does something different, we combine **variable length number**(to represent the `input buffer) plus one byte to be the **options**(quantity of bytes needed to store the input size, if the string its immutable, encode type).
 
 Lets get some examples to show: 
 
 - The string `Hello`
 
-  The string has five characters.   
-  The number five, fits in one byte.  
+  The string has five characters plus one to represent the null byte(because we also want a c stdlib compatible).   
+  The number six, fits in one byte.  
 
-  So, here, we will need 7 bytes to store the string length, the encoding format(ascii), if its updatable and so on.
-
-  Lets say that we requested memory 7 bytes for the OS, and it returned the **region** `0x4052a0` to us.
+  Lets say that we requested memory 8 bytes from the OS, and it returned the **region** `0x4052a0` to us.
 
   | Memory Region |   Value   |
   |:-------------:|:---------:|
-  |   0x4052A0    |   0x09    |
-  |   0x4052A1    |   0x01    |   
+  |   0x4052A0    | 0x06(The length of the input string plus the null character fits in one byte)|   
+  |   0x4052A1    | 0x09(The options) |   
   |   0x4052A2    | 0x48('H') |
   |   0x4052A3    | 0x65('e') |
   |   0x4052A4    | 0x6C('l') |
   |   0x4052A5    | 0x6C('l') |
-  |   0x4052A6    | 0x6F('o') |
+  |   0x4052A6    | 0x6F('o') |  
+  |   0x4052A7    | 0x00(The null byte) |  
 
-  As you can see, here we use only one more byte than we would use with the C-style null terminate strings.
+
+  After this allocation, we apply some pointer arithmetics and return the address: `0x4052A2` to the caller, so, it still has a c compatible string.
+
 
 Also, **SCS** its cache friendly, we do only one allocation.
 Usually, common libraries do: 
@@ -87,14 +85,13 @@ struct string
 Hence, we will need 2 allocations, and since both are on the heap, probably, when (string->buffer), likely, we are going to have a cache-miss.   
 **SCS** adds a new data type called `scs`, which is just an typedef to `void *`.
 
-Since **SCS** its not terminated with a `null byte`, we are binary safe.
 To create text string, you can use: `scs_from_string`, and to create strings from non text arrays, you can use: `scs_from`
 
 
 # Memory Usage explanation
 
-For the the first version, we are going to use only one byte to store the "options".    
-The message size its a variable length value.   
+The first bytes(min(1), max(8)) are used to store the variable length string size.   
+The following byte its used to store the string options.
 
 - ## Strings with $size \lt 256$
 
