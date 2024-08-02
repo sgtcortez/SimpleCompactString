@@ -15,7 +15,7 @@ extern "C"
     scs_t scs_from ( const char *, uint64_t );
     uint64_t scs_size ( const scs_t );
     void scs_free ( scs_t );
-    char *scs_to_string ( const scs_t );
+    const char *scs_to_string ( const scs_t );
 
 #ifdef __cplusplus
 }
