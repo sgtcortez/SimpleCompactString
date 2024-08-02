@@ -10,7 +10,6 @@ int main ( int argc, char **argv )
     char *str = scs_to_string ( string );
 
     puts ( str );
-    free ( str );
     scs_free ( string );
 
     return 0;

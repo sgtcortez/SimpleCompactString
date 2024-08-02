@@ -63,7 +63,8 @@ scs_internal restore ( const scs_t );
 scs_t scs_from_string ( const char *input )
 {
     const char *handled_input = input == NULL ? "" : input;
-    const size_t input_size = strlen ( handled_input );
+    // +1 byte to store the null byte
+    const size_t input_size = strlen ( handled_input ) + 1;
     return scs_from ( handled_input, input_size );
 }
 
@@ -101,13 +102,10 @@ void scs_free ( scs_t scs )
     free ( scs );
 }
 
-char *scs_to_string ( const scs_t scs )
+const char *scs_to_string ( const scs_t scs )
 {
     const scs_internal internal = restore ( scs );
-    const uint64_t size = scs_size ( scs );
-    char *string = calloc ( size + 1, sizeof ( char ) );
-    memcpy ( string, internal.buffer, size );
-    return string;
+    return internal.buffer;
 }
 
 uint64_t scs_size ( const scs_t scs )

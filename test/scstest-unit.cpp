@@ -1,8 +1,9 @@
 #include "scs/scs.h"
-#include <cstring>
-#include <gtest/gtest.h>
+
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
+#include <gtest/gtest.h>
 
 int main ( int argc, char **argv )
 {
@@ -25,18 +26,15 @@ TEST ( create_from_array, mustBeSuccess )
     ASSERT_EQ ( scs_size ( ar ), size );
 }
 
-TEST(restore_as_c_string, mustBeSuccess)
+TEST ( restore_as_c_string, mustBeSuccess )
 {
-    char * input = "Hello, my name its Matheus!";
-    const uint64_t input_size = strlen(input);
+    char *input = "Hello, my name its Matheus!";
+    const uint64_t input_size = strlen ( input );
 
-    scs_t string = scs_from_string (input);
+    const scs_t string = scs_from_string ( input );
+    const char *restore = scs_to_string ( string );
 
-    char * restore = scs_to_string(string);
+    ASSERT_TRUE ( strncmp ( input, restore, input_size ) == 0 );
 
-    ASSERT_TRUE(strncmp(input, restore, input_size));
-
-    free(restore);
-    scs_free(string);
-
+    scs_free ( string );
 }
