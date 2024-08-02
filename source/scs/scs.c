@@ -50,7 +50,20 @@ typedef union internal_options
 
 typedef struct scs_internal
 {
-    char *buffer;
+    union
+    {
+        /**
+         * Pointer to a read only buffer.
+         * It helps to avoid some mistakes
+         * Use this buffer when we intend to only read from memory
+         */
+        const char *r_buffer;
+
+        /**
+         * A writable buffer, use this one when intend to write to memory
+         */
+        char *rw_buffer;
+    };
     internal_options options;
 } scs_internal;
 
@@ -105,7 +118,7 @@ void scs_free ( scs_t scs )
 const char *scs_to_string ( const scs_t scs )
 {
     const scs_internal internal = restore ( scs );
-    return internal.buffer;
+    return internal.r_buffer;
 }
 
 uint64_t scs_size ( const scs_t scs )
@@ -120,6 +133,6 @@ scs_internal restore ( const scs_t scs )
     char *buffer = (char *)scs;
     scs_internal internal = { 0 };
     internal.options.byte = buffer[0];
-    internal.buffer = buffer + sizeof ( internal_options ) + internal.options.size_type;
+    internal.r_buffer = buffer + sizeof ( internal_options ) + internal.options.size_type;
     return internal;
 }
