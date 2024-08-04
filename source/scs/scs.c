@@ -5,7 +5,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <sys/mman.h>
+#include <unistd.h>
+
 #include "scs/arrayhelper.h"
+
+#define ALIGN(number, alignment)((number + (alignment - 1)) & ~(alignment - 1))
 
 enum encoding
 {
@@ -74,7 +79,7 @@ typedef struct scs_internal
     internal_options options;
 } scs_internal;
 
-scs_t scs_from_internal ( const char *input, const uint64_t size, const bool binary );
+scs_t scs_from_internal ( const char *input, const uint64_t size, const bool binary, const bool updatable );
 
 /**
  * Restore the public scs struct to the internal scs struct.
@@ -82,30 +87,41 @@ scs_t scs_from_internal ( const char *input, const uint64_t size, const bool bin
  */
 scs_internal restore ( const scs_t );
 
-scs_t scs_from_string ( const char *input )
+
+scs_t scs_from_string ( const char *input, const bool updatable )
 {
     const char *handled_input = input == NULL ? "" : input;
     // +1 byte to store the null byte
     const size_t input_size = strlen ( handled_input ) + 1;
-    return scs_from_internal ( handled_input, input_size, false );
+    return scs_from_internal ( handled_input, input_size, false, updatable );
 }
 
-scs_t scs_from ( const char *input, uint64_t size )
+scs_t scs_from ( const char *input, const uint64_t size, const bool updatable )
 {
-    return scs_from_internal ( input, size, true );
+    return scs_from_internal ( input, size, true, updatable );
 }
 
-scs_t scs_from_internal ( const char *input, const uint64_t size, const bool binary )
+scs_t scs_from_internal ( const char *input, const uint64_t size, const bool binary, const bool updatable )
 {
     internal_options opt;
+    opt.updatable = updatable;
     opt.size_type = count_bytes ( size );
-    opt.updatable = 1;
     opt.encoding = ASCII;
     opt.binary = binary;
 
     const uint64_t bytes_needed = sizeof ( opt ) + count_bytes ( size ) + size;
+    char *buffer;
 
-    char *buffer = calloc ( bytes_needed, sizeof ( char ) );
+    if (updatable)
+    {
+        buffer = calloc ( bytes_needed, sizeof ( char ) );
+    }
+    else 
+    {
+        const int page_size = sysconf(_SC_PAGESIZE);
+        const uint64_t aligned_size = ALIGN(bytes_needed, page_size);
+        buffer = aligned_alloc(page_size, aligned_size);
+    }
 
     /**
      * Store the user input message size in a variable length size
@@ -122,6 +138,17 @@ scs_t scs_from_internal ( const char *input, const uint64_t size, const bool bin
      */
     memcpy ( buffer + sizeof ( opt ) + opt.size_type, input, size );
 
+    if (!updatable)
+    {
+        const int page_size = sysconf(_SC_PAGESIZE);
+        const uint64_t aligned_size = ALIGN(bytes_needed, page_size);        
+        if (mprotect(buffer, aligned_size, PROT_READ) < 0) 
+        {
+            // an error happened
+            // Handle this latter
+            exit(1);
+        }
+    }
     /**
      * Returns the C style string for the user
      */
@@ -130,7 +157,27 @@ scs_t scs_from_internal ( const char *input, const uint64_t size, const bool bin
 
 void scs_free ( scs_t scs )
 {
+    if (!scs)
+    {
+        return;
+    }
     scs_internal internal = restore ( scs );
+    if (!scs) 
+    {
+        return;
+    }
+    if (!(internal.options.updatable)) 
+    {
+        // We need to remove the protection of this memory region
+        const uint64_t bytes_needed = sizeof ( internal_options ) + internal.options.size_type + scs_size(scs);
+        const int page_size = sysconf(_SC_PAGESIZE);
+        const uint64_t aligned_size = ALIGN(bytes_needed, page_size);        
+        if (mprotect(scs, aligned_size, PROT_READ | PROT_WRITE) < 0)
+        {
+            // TODO Handle
+            exit(1);
+        }
+    }
     free ( internal.rw_buffer );
 }
 
@@ -157,3 +204,4 @@ scs_internal restore ( const scs_t scs )
     internal.rw_buffer = scs - bytes;
     return internal;
 }
+

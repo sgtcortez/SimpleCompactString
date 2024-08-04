@@ -15,12 +15,12 @@ extern "C"
      * Creates a scs object from a c string.
      * Note: The return scs its a c style compatible string
      */
-    scs_t scs_from_string ( const char *string );
+    scs_t scs_from_string ( const char *string, const bool updatable );
 
     /**
      * Creates a scs object from an array.
      */
-    scs_t scs_from ( const char *array, const uint64_t array_size );
+    scs_t scs_from ( const char *array, const uint64_t array_size, const bool updatable );
 
     /**
      * Returns the size of scs object
