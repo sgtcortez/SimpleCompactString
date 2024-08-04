@@ -22,7 +22,7 @@ extern "C"
     /**
      * Count how many bytes are needed to store this number
      */
-    uint8_t count_bytes ( uint64_t );
+    uint8_t count_bytes ( const uint64_t number );
 
 #ifdef __cplusplus
 }
