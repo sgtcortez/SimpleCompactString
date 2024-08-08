@@ -87,12 +87,11 @@ scs_t scs_from_internal ( const char *input, const uint64_t size )
     opt.updatable = 1;
     opt.encoding = ASCII;
 
-
     /**
-     * We always store the last byte as 0. 
+     * We always store the last byte as 0.
      * So we can always have a cstring compatible array
      * This one byte that we added, will not be present in scs_size
-    */
+     */
     const uint64_t bytes_needed = sizeof ( opt ) + count_bytes ( size ) + size + 1;
 
     char *buffer = calloc ( bytes_needed, sizeof ( char ) );

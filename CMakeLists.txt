@@ -8,6 +8,7 @@ set(
         SOURCES
         source/scs/arrayhelper.c
         source/scs/scs.c
+        source/scs/scs_iterator.c
 )
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})

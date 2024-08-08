@@ -13,3 +13,7 @@ FetchContent_MakeAvailable(gtest)
 add_executable(scsunit scstest-unit.cpp)
 target_link_libraries(scsunit scs)
 target_link_libraries(scsunit gtest_main)
+
+add_executable(iterator iterator.cpp)
+target_link_libraries(iterator scs)
+target_link_libraries(iterator gtest_main)
