@@ -83,9 +83,7 @@ struct string
 };
 ```
 Hence, we will need 2 allocations, and since both are on the heap, probably, when (string->buffer), likely, we are going to have a cache-miss.   
-**SCS** adds a new data type called `scs`, which is just an typedef to `void *`.
-
-To create text string, you can use: `scs_from_string`, and to create strings from non text arrays, you can use: `scs_from`
+**SCS** adds a new data type called `scs`, which is just an typedef to `char *`.
 
 
 # Memory Usage explanation
