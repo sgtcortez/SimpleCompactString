@@ -75,7 +75,7 @@ int main ( int argc, char **argv )
         memcpy ( huge + start, str, text_size );
     }
 
-    const scs_t *scs = scs_from ( huge, strlen(huge) );
+    const scs_t *scs = scs_from ( huge, strlen ( huge ) );
     const int equals = strcmp ( huge, scs );
 
     fprintf ( stdout, "Are they equals?(%s). String length: %lu\n",
