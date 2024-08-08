@@ -5,7 +5,10 @@
 
 int main ( int argc, char **argv )
 {
-    scs_t string = scs_from_string ( "Hello, my name is sgt-cortez!. Nice to meet with you ..." );
+
+    char *input =  "Hello, my name is sgt-cortez!. Nice to meet with you ...";
+
+    scs_t string = scs_from ( input, strlen(input) );
     puts ( string );
     scs_free ( string );
     return 0;

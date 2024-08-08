@@ -43,13 +43,6 @@ typedef union internal_options
          */
         uint8_t encoding : 2;
 
-        /**
-         * A flag to determine if the string is binary or not
-         * If binary = 0, this means that the last byte must be the null byte, hence, we need to
-         * ignore it in the scs_size function
-         */
-        uint8_t binary : 1;
-
         uint8_t unused : 1;
     };
     uint8_t byte;
@@ -74,7 +67,7 @@ typedef struct scs_internal
     internal_options options;
 } scs_internal;
 
-scs_t scs_from_internal ( const char *input, const uint64_t size, const bool binary );
+scs_t scs_from_internal ( const char *input, const uint64_t size );
 
 /**
  * Restore the public scs struct to the internal scs struct.
@@ -82,28 +75,25 @@ scs_t scs_from_internal ( const char *input, const uint64_t size, const bool bin
  */
 scs_internal restore ( const scs_t );
 
-scs_t scs_from_string ( const char *input )
-{
-    const char *handled_input = input == NULL ? "" : input;
-    // +1 byte to store the null byte
-    const size_t input_size = strlen ( handled_input ) + 1;
-    return scs_from_internal ( handled_input, input_size, false );
-}
-
 scs_t scs_from ( const char *input, uint64_t size )
 {
-    return scs_from_internal ( input, size, true );
+    return scs_from_internal ( input, size );
 }
 
-scs_t scs_from_internal ( const char *input, const uint64_t size, const bool binary )
+scs_t scs_from_internal ( const char *input, const uint64_t size )
 {
     internal_options opt;
     opt.size_type = count_bytes ( size );
     opt.updatable = 1;
     opt.encoding = ASCII;
-    opt.binary = binary;
 
-    const uint64_t bytes_needed = sizeof ( opt ) + count_bytes ( size ) + size;
+
+    /**
+     * We always store the last byte as 0. 
+     * So we can always have a cstring compatible array
+     * This one byte that we added, will not be present in scs_size
+    */
+    const uint64_t bytes_needed = sizeof ( opt ) + count_bytes ( size ) + size + 1;
 
     char *buffer = calloc ( bytes_needed, sizeof ( char ) );
 
@@ -139,14 +129,7 @@ uint64_t scs_size ( const scs_t scs )
     const scs_internal internal = restore ( scs );
     const uint64_t bytes = sizeof ( internal_options ) + internal.options.size_type;
     char *start_index = scs - bytes;
-
-    const uint64_t size = array_restore ( start_index, internal.options.size_type );
-    if ( internal.options.binary )
-    {
-        return size;
-    }
-    // we must not count the null byte as part of the string length
-    return size - 1;
+    return array_restore ( start_index, internal.options.size_type );
 }
 
 scs_internal restore ( const scs_t scs )

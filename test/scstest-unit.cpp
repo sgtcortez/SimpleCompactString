@@ -13,7 +13,7 @@ int main ( int argc, char **argv )
 
 TEST ( create_from_string, mustBeSuccess )
 {
-    scs_t string = scs_from_string ( "Hello" );
+    scs_t string = scs_from ( "Hello", 5 );
     ASSERT_NE ( string, nullptr );
     scs_free ( string );
 }
@@ -31,7 +31,7 @@ TEST ( compare_cstrings, mustBeSuccess )
     char *input = "Hello, my name its Matheus!";
     const uint64_t input_size = strlen ( input );
 
-    const scs_t string = scs_from_string ( input );
+    const scs_t string = scs_from ( input, strlen(input) );
 
     ASSERT_TRUE ( strncmp ( input, string, input_size ) == 0 );
 
@@ -41,7 +41,7 @@ TEST ( compare_cstrings, mustBeSuccess )
 TEST ( compare_length, mustBeSuccess )
 {
     // For binary strings, we can not depend of the null byte, thats why we need the `scs_size` function
-    scs_t string = scs_from_string ( "Hello" );
+    scs_t string = scs_from ( "Hello", 5 );
     ASSERT_EQ ( 5, scs_size ( string ) );
 
     scs_free ( string );
