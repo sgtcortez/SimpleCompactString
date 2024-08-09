@@ -5,3 +5,6 @@ target_link_libraries(simplestring scs)
 
 add_executable(hugestring hugestring.c)
 target_link_libraries(hugestring scs)
+
+add_executable(httpserver httpserver.c)
+target_link_libraries(httpserver scs)
