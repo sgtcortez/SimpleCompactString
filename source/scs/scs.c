@@ -5,7 +5,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <sys/mman.h>
+#include <unistd.h>
+
 #include "scs/arrayhelper.h"
+
+#define ALIGN( number, alignment ) ( ( number + ( alignment - 1 ) ) & ~( alignment - 1 ) )
 
 enum encoding
 {
@@ -32,7 +37,7 @@ typedef union internal_options
          * Maybe, we can take a look into this system call:
          * https://linux.die.net/man/2/mprotect
          */
-        uint8_t updatable : 1;
+        bool read_only : 1;
 
         /**
          * What type of encoding is it using?
@@ -67,7 +72,7 @@ typedef struct scs_internal
     internal_options options;
 } scs_internal;
 
-scs_t scs_from_internal ( const char *input, const uint64_t size );
+scs_t scs_from_internal ( const char *input, const uint64_t size, const bool read_only );
 
 /**
  * Restore the public scs struct to the internal scs struct.
@@ -77,14 +82,18 @@ scs_internal restore ( const scs_t );
 
 scs_t scs_from ( const char *input, uint64_t size )
 {
-    return scs_from_internal ( input, size );
+    return scs_from_internal ( input, size, false );
 }
 
-scs_t scs_from_internal ( const char *input, const uint64_t size )
+scs_t scs_from_readonly ( const char *input, uint64_t size )
+{
+    return scs_from_internal ( input, size, true );
+}
+
+scs_t scs_from_internal ( const char *input, const uint64_t size, const bool read_only )
 {
     internal_options opt;
     opt.size_type = count_bytes ( size );
-    opt.updatable = 1;
     opt.encoding = ASCII;
 
     /**
@@ -94,7 +103,27 @@ scs_t scs_from_internal ( const char *input, const uint64_t size )
      */
     const uint64_t bytes_needed = sizeof ( opt ) + count_bytes ( size ) + size + 1;
 
-    char *buffer = calloc ( bytes_needed, sizeof ( char ) );
+    char *buffer = NULL;
+
+    if ( !read_only )
+    {
+        /**
+         * The user wants a SCS object that can be updated
+         */
+        opt.read_only = false;
+        buffer = calloc ( bytes_needed, sizeof ( char ) );
+    }
+    else
+    {
+        /**
+         * We need to align with a operating system memory size.
+         * Usually 4kiB
+         */
+        opt.read_only = true;
+        const int page_size = sysconf ( _SC_PAGESIZE );
+        const uint64_t aligned_size = ALIGN ( bytes_needed, page_size );
+        buffer = aligned_alloc ( page_size, aligned_size );
+    }
 
     /**
      * Store the user input message size in a variable length size
@@ -111,6 +140,17 @@ scs_t scs_from_internal ( const char *input, const uint64_t size )
      */
     memcpy ( buffer + sizeof ( opt ) + opt.size_type, input, size );
 
+    if ( read_only )
+    {
+        const int page_size = sysconf ( _SC_PAGESIZE );
+        const uint64_t aligned_size = ALIGN ( bytes_needed, page_size );
+        if ( mprotect ( buffer, aligned_size, PROT_READ ) < 0 )
+        {
+            // error
+            exit ( 1 );
+        }
+    }
+
     /**
      * Returns the C style string for the user
      */
@@ -120,6 +160,20 @@ scs_t scs_from_internal ( const char *input, const uint64_t size )
 void scs_free ( scs_t scs )
 {
     scs_internal internal = restore ( scs );
+    if ( internal.options.read_only )
+    {
+        // We need to remove the protection of this memory region
+        const uint64_t bytes_needed =
+            sizeof ( internal_options ) + internal.options.size_type + scs_size ( scs );
+        const int page_size = sysconf ( _SC_PAGESIZE );
+        const uint64_t aligned_size = ALIGN ( bytes_needed, page_size );
+        if ( mprotect ( internal.rw_buffer, aligned_size, PROT_READ | PROT_WRITE ) < 0 )
+        {
+            // error
+            exit ( 1 );
+        }
+    }
+
     free ( internal.rw_buffer );
 }
 
