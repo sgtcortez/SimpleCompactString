@@ -6,6 +6,7 @@
 - [Examples](#Examples)
 - [Architecture](#architecture)
 - [Memory Usage explanation](#Memory-Usage-explanation)
+- [Memory Protection](#Memory-Protection)
 
 # Introduction
 
@@ -110,3 +111,24 @@ The following byte its used to store the string options.
 
     For this type of string, only five additional bytes are going to be used.   
     The first byte, will be the options, the second, third, fourth and the fifth byte represent the string length.
+
+# Memory Protection
+
+With the introduction of: [Memory Protection](https://github.com/sgtcortez/SimpleCompactString/issues/4), now we allow the user to create **read only** strings.   
+The implementation of those read only strings are backed by [**mprotect**](https://man7.org/linux/man-pages/man2/mprotect.2.html) system call.    
+So, if the user decides, we create a "string" that can not be modified, and this is guarantee by the operating system.     
+The only drawback, is that we need to use more memory that what the user "really" needs, becuase the **buffer** size must be aligned to the memory page size(usually 4KiB).
+
+An example of the creation of a **read only** **scs** string, the function **`scs_from_readonly`** was added to support this  
+```c
+  const char *input = "Someone is trying to access a protected memory region ... ";
+  scs_t rd_string = scs_from_readonly ( input, strlen ( input ) );
+  puts ( rd_string );
+  
+  /**
+   * This will cause a SIGSEGV  
+  */
+  rd_string[5] = 0xFF;
+```
+
+You can an example of **memory protection** *violation* in: `examples/basic_usage/protectviolation.c`

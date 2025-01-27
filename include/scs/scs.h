@@ -18,6 +18,11 @@ extern "C"
     scs_t scs_from ( const char *array, const uint64_t array_size );
 
     /**
+     * Creates a readonly scs object from an array
+     */
+    scs_t scs_from_readonly ( const char *array, const uint64_t array_size );
+
+    /**
      * Returns the size of scs object
      */
     uint64_t scs_size ( const scs_t scs );

@@ -8,3 +8,6 @@ target_link_libraries(hugestring scs)
 
 add_executable(httpserver httpserver.c)
 target_link_libraries(httpserver scs)
+
+add_executable(protectviolation protectviolation.c)
+target_link_libraries(protectviolation scs)
